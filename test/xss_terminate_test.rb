@@ -16,7 +16,8 @@ class XssTerminateTest < Test::Unit::TestCase
                       :extended => "<script>alert('xss in extended')</script>",
                       :person_id => 1)
 
-    assert_equal [:body, :extended], e.xss_terminate_options[:sanitize]
+    assert_equal :sanitize, e.xss_terminate_options[:body]
+    assert_equal :sanitize, e.xss_terminate_options[:extended]
     
     assert_equal "alert('xss in title')", e.title
 
@@ -28,7 +29,7 @@ class XssTerminateTest < Test::Unit::TestCase
   def test_excepting_specified_fields
     p = Person.create!(:name => "<strong>Mallory</strong>")
     
-    assert_equal [:name], p.xss_terminate_options[:except]
+    assert_equal :except, p.xss_terminate_options[:name]
     
     assert_equal "<strong>Mallory</strong>", p.name
   end
@@ -39,7 +40,8 @@ class XssTerminateTest < Test::Unit::TestCase
                        :extended => "<script>alert('xss in extended')</script>",
                        :person_id => 1)
                        
-    assert_equal [:body, :extended], r.xss_terminate_options[:html5lib_sanitize]
+    assert_equal :html5lib_sanitize, r.xss_terminate_options[:body]
+    assert_equal :html5lib_sanitize, r.xss_terminate_options[:extended]
 
     assert_equal "alert('xss in title')", r.title
     
@@ -68,5 +70,12 @@ class XssTerminateTest < Test::Unit::TestCase
     c = Comment.new(:title => "<br />")
     assert !c.save
     assert_not_nil c.errors.on(:title)
+  end
+  
+  def test_default_sanitizing_method
+    Comment.class_eval { xss_terminate :default => :except }
+    c = Comment.new(:title => "<br />")
+    assert c.save
+    Comment.class_eval { xss_terminate }
   end
 end

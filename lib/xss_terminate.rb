@@ -9,13 +9,17 @@ module XssTerminate
     def xss_terminate(options = {})
       before_validation :sanitize_fields
 
-      write_inheritable_attribute(:xss_terminate_options, {
-        :except => (options[:except] || []),
-        :html5lib_sanitize => (options[:html5lib_sanitize] || []),
-        :sanitize => (options[:sanitize] || [])
-      })
-      
+      write_inheritable_attribute(:xss_terminate_options, {})
       class_inheritable_reader :xss_terminate_options
+      
+      xss_terminate_options.default = XSS_TERMINATE_DEFAULT if defined?(XSS_TERMINATE_DEFAULT)
+      xss_terminate_options.default = options.delete(:default) if options[:default]
+
+      options.each do |method, attributes|
+        attributes.each do |attr|
+          xss_terminate_options[attr] = method
+        end
+      end
       
       include XssTerminate::InstanceMethods
     end
@@ -34,13 +38,12 @@ module XssTerminate
         field = column.name.to_sym
         value = self[field]
 
-        next if value.nil?
+        next if value.nil? or xss_terminate_options[field] == :except
         
-        if xss_terminate_options[:except].include?(field)
-          next
-        elsif xss_terminate_options[:html5lib_sanitize].include?(field)
+        case xss_terminate_options[field]
+        when :html5lib_sanitize
           self[field] = HTML5libSanitize.new.sanitize_html(value)
-        elsif xss_terminate_options[:sanitize].include?(field)
+        when :sanitize
           self[field] = RailsSanitize.white_list_sanitizer.sanitize(value)
         else
           self[field] = RailsSanitize.full_sanitizer.sanitize(value)

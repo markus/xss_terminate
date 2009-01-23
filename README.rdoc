@@ -25,7 +25,7 @@ A note on your choices.
 
 == Usage
 
-Installing the plugin creates a +before_save+ hook that will strip HTML tags 
+Installing the plugin creates a +before_validation+ hook that will strip HTML tags 
 from all string and text fields. No further configuration is necessary if this
 is what you want. To customize the behavior, you use the +xss_terminate+ class 
 method.
@@ -57,6 +57,17 @@ and others sanitized. Fields not listed in the option arrays will be stripped.
  class Message < ActiveRecord::Base
    xss_terminate :except => [ :body ], :sanitize => [ :title ]
  end
+
+To change the default sanitizing method for all models you can put this in the
+beginning of config/environment.rb or in config/preinitializer.rb:
+
+  XSS_TERMINATE_DEFAULT = :sanitize
+
+To change the default sanitizing method for one model only:
+
+  class Message < ActiveRecord::Base
+    xss_terminate :default  => :sanitize
+  end
 
 == Sanitizing existing records
 
