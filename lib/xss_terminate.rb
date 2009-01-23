@@ -46,10 +46,12 @@ module XssTerminate
         when :sanitize
           self[field] = RailsSanitize.white_list_sanitizer.sanitize(value)
         when :simple_escape
-          self[field] = value.gsub('<', '&lt;')
+          if value != RailsSanitize.full_sanitizer.sanitize(value)
+            self[field] = value.gsub('<', '&lt;')
+          end
         when :validate
-          if value.include?('<')
-            errors.add(field, 'cannot contain the less than character')
+          if value != RailsSanitize.full_sanitizer.sanitize(value)
+            errors.add(field, 'cannot contain html tags')
           end
         else
           self[field] = RailsSanitize.full_sanitizer.sanitize(value)
