@@ -76,6 +76,23 @@ class XssTerminateTest < Test::Unit::TestCase
     Comment.class_eval { xss_terminate :default => :except }
     c = Comment.new(:title => "<br />")
     assert c.save
+    assert_equal "<br />", c.title
+    Comment.class_eval { xss_terminate }
+  end
+  
+  def test_escape
+    Comment.class_eval { xss_terminate :default => :simple_escape }
+    c = Comment.new(:title => "br", :body => "<p>body</p>")
+    assert c.save
+    assert_equal "&lt;p>body&lt;/p>", c.body
+    Comment.class_eval { xss_terminate }
+  end
+  
+  def test_validate
+    Comment.class_eval { xss_terminate :default => :validate }
+    c = Comment.new(:title => "br", :body => "<script>alert('xss in body')</script>")
+    assert !c.save
+    assert_not_nil c.errors.on(:body)
     Comment.class_eval { xss_terminate }
   end
 end

@@ -7,7 +7,7 @@ module XssTerminate
 
   module ClassMethods
     def xss_terminate(options = {})
-      before_validation :sanitize_fields
+      validate :sanitize_fields
 
       write_inheritable_attribute(:xss_terminate_options, {})
       class_inheritable_reader :xss_terminate_options
@@ -45,6 +45,12 @@ module XssTerminate
           self[field] = HTML5libSanitize.new.sanitize_html(value)
         when :sanitize
           self[field] = RailsSanitize.white_list_sanitizer.sanitize(value)
+        when :simple_escape
+          self[field] = value.gsub('<', '&lt;')
+        when :validate
+          if value.include?('<')
+            errors.add(field, 'cannot contain the less than character')
+          end
         else
           self[field] = RailsSanitize.full_sanitizer.sanitize(value)
         end
