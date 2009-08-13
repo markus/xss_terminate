@@ -51,7 +51,11 @@ module XssTerminate
           end
         when :validate
           if value != RailsSanitize.full_sanitizer.sanitize(value)
-            errors.add(field, 'cannot contain html tags')
+            if value =~ /<(\w+)(\s+)?(\s+\w+=[^>]+)*\/?>/
+              errors.add(field, 'cannot contain html tags')
+            else
+              errors.add(field, 'cannot contain html tags. A combination of < and quotes or > may be interpreted as html. You may have to replace < with less than.')
+            end
           end
         else
           self[field] = RailsSanitize.full_sanitizer.sanitize(value)
